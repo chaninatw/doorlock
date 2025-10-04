@@ -166,9 +166,17 @@
 </head>
 <body>
   <div class="stage" id="stage">
-    <!-- ✅ VIDEO ELEMENT (16:9 fullscreen background, now with controls) -->
-    <video id="bg" data-src="" preload="metadata" muted playsinline controls></video>
-    <!-- 🔹 You can replace data-src with your own URL -->
+    <!-- ✅ VIDEO ELEMENT (16:9 fullscreen background, with native controls and your GitHub RAW src) -->
+    <video
+      id="bg"
+      preload="metadata"
+      muted
+      playsinline
+      controls
+      src="https://raw.githubusercontent.com/chaninatw/doorlock/main/doorlock.mp4"
+      data-src="https://raw.githubusercontent.com/chaninatw/doorlock/main/doorlock.mp4"
+    ></video>
+    <!-- 🔹 Using RAW GitHub URL so you don't need to re-upload -->
   </div>
 
   <div class="overlay">
@@ -211,7 +219,6 @@
 
       <span class="spacer"></span>
       <div class="links">
-        <!-- ✅ NEW NOTE -->
         <span>🔊 Volume is muted by default (browser policy). Use the video’s controls to unmute.</span>
       </div>
     </div>
@@ -219,6 +226,11 @@
 
 <script>
 (function(){
+  // === Config ===
+  const DEFAULT_SRC = "https://raw.githubusercontent.com/chaninatw/doorlock/main/doorlock.mp4";
+  const FALLBACK_SRC = "https://github.com/chaninatw/doorlock/raw/main/doorlock.mp4?raw=1"; // fallback if needed
+
+  // DOM
   const video = document.getElementById('bg');
   const playBtn = document.getElementById('playBtn');
   const fileInput = document.getElementById('fileInput');
@@ -236,9 +248,12 @@
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
 
-  const initialSrc = video.getAttribute('data-src').trim();
-  if (initialSrc) applyVideoSrc(initialSrc);
+  // Ensure the default src is set (in case someone removed it in HTML)
+  if (!video.src || video.src === window.location.href) {
+    video.src = DEFAULT_SRC;
+  }
 
+  // Timer state
   let totalSeconds = 80 * 60;
   let remaining = totalSeconds;
   let ticking = false;
@@ -316,6 +331,7 @@
     render();
   }
 
+  // VIDEO helpers
   function applyVideoSrc(src){
     try {
       video.src = src;
@@ -327,10 +343,10 @@
   }
 
   async function goFullscreenAndPlay() {
-    if (!video.src || video.src === window.location.href) {
-      const url = videoUrl.value.trim();
-      if (url) applyVideoSrc(url);
-    }
+    // If URL text field is filled, switch source before starting
+    const url = videoUrl.value.trim();
+    if (url) applyVideoSrc(url);
+
     try {
       if (video.paused) await video.play();
       if (!document.fullscreenElement) {
@@ -339,10 +355,11 @@
       }
       setStatus(video.paused ? 'paused' : 'playing');
     } catch (err) {
-      console.warn('Autoplay may require user gesture.', err);
+      console.warn('Playback may require user gesture / muted policy.', err);
     }
   }
 
+  // EVENTS
   playBtn.addEventListener('click', goFullscreenAndPlay);
   loadUrlBtn.addEventListener('click', () => {
     const url = videoUrl.value.trim();
@@ -364,6 +381,16 @@
   video.addEventListener('pause', ()=> ticking ? setStatus('playing') : setStatus('paused'));
   video.addEventListener('ended', ()=> setStatus('stopped'));
 
+  // If RAW URL fails (rare), try ?raw=1 fallback
+  let triedFallback = false;
+  video.addEventListener('error', () => {
+    if (!triedFallback) {
+      triedFallback = true;
+      applyVideoSrc(FALLBACK_SRC);
+    }
+  });
+
+  // Keyboard shortcuts
   document.addEventListener('keydown', (e)=>{
     if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { e.preventDefault(); ticking ? pauseTimer() : startTimer(); }
@@ -376,6 +403,7 @@
     else if (e.key === 'ArrowDown') { totalSeconds = Math.max(0, totalSeconds - 60); remaining = Math.max(0, remaining - 60); render(); }
   });
 
+  // Initialize
   render();
 })();
 </script>
