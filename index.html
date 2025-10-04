@@ -30,9 +30,9 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;          /* fill screen */
+    object-fit: cover;
     object-position: center;
-    aspect-ratio: 16 / 9;       /* hint for some browsers */
+    aspect-ratio: 16 / 9;
     filter: brightness(0.9);
   }
 
@@ -43,10 +43,10 @@
     display: grid;
     grid-template-rows: auto 1fr auto;
     gap: 1rem;
-    pointer-events: none; /* let clicks pass through by default */
+    pointer-events: none;
   }
   .panel {
-    pointer-events: auto; /* enable interaction */
+    pointer-events: auto;
     background: var(--ui-bg);
     border: 1px solid var(--ui-border);
     border-radius: 12px;
@@ -63,7 +63,7 @@
   }
   .spacer { flex: 1; }
 
-  /* Timer display (center) */
+  /* Timer display */
   .timer-wrap {
     display: grid;
     place-items: center;
@@ -79,7 +79,6 @@
     font-variant-numeric: tabular-nums;
     text-shadow: 0 2px 30px rgba(0,0,0,.5);
   }
-  /* Responsive sizing for the big timer */
   @media (min-width: 1024px) {
     .timer .main { font-size: clamp(64px, 13vw, 160px); }
   }
@@ -92,7 +91,6 @@
     font-size: clamp(12px, 2.5vw, 16px);
   }
 
-  /* Buttons + inputs */
   button, input, select, label {
     font: inherit;
     color: #fff;
@@ -138,7 +136,6 @@
   }
   .field input[type="text"] { width: min(42vw, 28ch); }
 
-  /* Badges */
   .badge {
     display: inline-flex;
     align-items: center;
@@ -160,7 +157,6 @@
 
   .links { opacity: .85; font-size: .9rem; }
 
-  /* Make controls comfy on phones */
   @media (max-width: 640px) {
     .topbar, .bottombar { margin: .75rem; padding: .6rem; gap: .5rem; }
     .field input[type="text"] { width: min(60vw, 22ch); }
@@ -170,20 +166,21 @@
 </head>
 <body>
   <div class="stage" id="stage">
-    <!-- Set your default video source in data-src (or use the controls to load one) -->
-    <video id="bg" data-src="" preload="metadata" muted playsinline></video>
+    <!-- ✅ VIDEO ELEMENT (16:9 fullscreen background, now with controls) -->
+    <video id="bg" data-src="" preload="metadata" muted playsinline controls></video>
+    <!-- 🔹 You can replace data-src with your own URL -->
   </div>
 
   <div class="overlay">
-    <!-- Top controls: video play/load + status -->
+    <!-- Top bar -->
     <div class="topbar panel">
       <button id="playBtn" class="primary">▶ Play (Fullscreen)</button>
-      <div class="field" title="Paste a direct video URL (mp4/webm)">
+      <div class="field">
         <label for="videoUrl">Video URL</label>
         <input id="videoUrl" type="text" placeholder="https://example.com/video.mp4" />
         <button id="loadUrlBtn" class="btn">Load</button>
       </div>
-      <div class="field" title="Or choose a local video file">
+      <div class="field">
         <label for="fileInput">File</label>
         <input id="fileInput" type="file" accept="video/*" />
       </div>
@@ -191,17 +188,17 @@
       <span class="badge" id="statusBadge"><span class="dot stopped" id="statusDot"></span><span id="statusText">Stopped</span></span>
     </div>
 
-    <!-- Center: big countdown -->
+    <!-- Center timer -->
     <div class="timer-wrap">
       <div class="timer">
         <div class="main" id="timeDisplay">80:00</div>
-        <div class="sub" id="hint">SPACE = Start/Pause • R = Reset • F = Fullscreen • ↑/↓ = +1/-1 min</div>
+        <div class="sub">SPACE = Start/Pause • R = Reset • F = Fullscreen • ↑/↓ = +1/-1 min</div>
       </div>
     </div>
 
-    <!-- Bottom controls: timer set/start/pause/reset -->
+    <!-- Bottom bar -->
     <div class="bottombar panel">
-      <div class="field" title="Set minutes and seconds">
+      <div class="field">
         <label for="minInput">Set</label>
         <input id="minInput" type="number" min="0" value="80" /> min
         <input id="secInput" type="number" min="0" max="59" value="0" /> sec
@@ -214,7 +211,8 @@
 
       <span class="spacer"></span>
       <div class="links">
-        <span>Volume is muted by default (browser policy). Unmute via the video’s context menu or add controls in code if needed.</span>
+        <!-- ✅ NEW NOTE -->
+        <span>🔊 Volume is muted by default (browser policy). Use the video’s controls to unmute.</span>
       </div>
     </div>
   </div>
@@ -238,12 +236,10 @@
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
 
-  // INITIAL VIDEO SOURCE (optional): put your URL in data-src attribute
   const initialSrc = video.getAttribute('data-src').trim();
   if (initialSrc) applyVideoSrc(initialSrc);
 
-  // Timer state
-  let totalSeconds = 80 * 60;  // default 80:00
+  let totalSeconds = 80 * 60;
   let remaining = totalSeconds;
   let ticking = false;
   let rafId = null;
@@ -262,9 +258,7 @@
     return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
   }
 
-  function render() {
-    timeDisplay.textContent = formatTime(remaining);
-  }
+  function render() { timeDisplay.textContent = formatTime(remaining); }
 
   function tick(ts) {
     if (!ticking) return;
@@ -277,7 +271,6 @@
       ticking = false;
       setStatus('stopped');
       render();
-      // Optional beep or flash could be added here.
       return;
     }
     render();
@@ -323,7 +316,6 @@
     render();
   }
 
-  // VIDEO HELPERS
   function applyVideoSrc(src){
     try {
       video.src = src;
@@ -335,7 +327,6 @@
   }
 
   async function goFullscreenAndPlay() {
-    // If no source yet, try URL field; else do nothing.
     if (!video.src || video.src === window.location.href) {
       const url = videoUrl.value.trim();
       if (url) applyVideoSrc(url);
@@ -348,12 +339,10 @@
       }
       setStatus(video.paused ? 'paused' : 'playing');
     } catch (err) {
-      console.warn('Autoplay may require user interaction or muted video.', err);
-      alert('Could not start playback. Try ensuring the video is muted or interact with the page first.');
+      console.warn('Autoplay may require user gesture.', err);
     }
   }
 
-  // EVENTS
   playBtn.addEventListener('click', goFullscreenAndPlay);
   loadUrlBtn.addEventListener('click', () => {
     const url = videoUrl.value.trim();
@@ -366,10 +355,7 @@
     applyVideoSrc(blobUrl);
   });
 
-  setBtn.addEventListener('click', ()=>{
-    applySetFromInputs();
-    setStatus('stopped');
-  });
+  setBtn.addEventListener('click', ()=>{ applySetFromInputs(); setStatus('stopped'); });
   startBtn.addEventListener('click', startTimer);
   pauseBtn.addEventListener('click', pauseTimer);
   resetBtn.addEventListener('click', resetTimer);
@@ -378,9 +364,8 @@
   video.addEventListener('pause', ()=> ticking ? setStatus('playing') : setStatus('paused'));
   video.addEventListener('ended', ()=> setStatus('stopped'));
 
-  // Keyboard shortcuts
   document.addEventListener('keydown', (e)=>{
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { e.preventDefault(); ticking ? pauseTimer() : startTimer(); }
     else if (e.key.toLowerCase() === 'r') { resetTimer(); }
     else if (e.key.toLowerCase() === 'f') {
@@ -391,11 +376,7 @@
     else if (e.key === 'ArrowDown') { totalSeconds = Math.max(0, totalSeconds - 60); remaining = Math.max(0, remaining - 60); render(); }
   });
 
-  // Initialize display
   render();
-
-  // Keep 16:9 feel on resize (object-fit handles most cases)
-  window.addEventListener('resize', ()=>{/* no-op, CSS handles it */});
 })();
 </script>
 </body>
